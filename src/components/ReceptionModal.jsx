@@ -413,57 +413,98 @@ export function ReceptionModal({ isOpen, onClose, appointments, onUpdateAppointm
                 )}
               </div>
 
-              <div className="flex-1 overflow-y-auto space-y-2 max-h-[300px] pr-1">
+              <div className="flex-1 overflow-y-auto max-h-[300px] pr-1">
                 {results.length === 0 ? (
                   <div className="h-full flex flex-col items-center justify-center text-center p-4 border border-dashed border-gray-200 rounded-xl bg-gray-50/50">
                     <Search className="w-8 h-8 text-gray-300 mb-2" />
                     <p className="text-xs text-gray-400 font-medium">Completa los 3 campos (DNI, Nombre y F. Nacimiento) para buscar coincidencias en la base de pacientes.</p>
                   </div>
                 ) : (
-                  results.map((patient, index) => (
-                    <button
-                      key={index}
-                      onClick={() => handleSelectPatient(patient)}
-                      className={cn(
-                        "w-full p-3 text-left rounded-xl border transition-all flex items-center justify-between hover:shadow-md",
-                        selectedPatient?.patientName === patient.patientName
-                          ? "bg-blue-50/60 border-blue-200 shadow-sm"
-                          : "bg-white border-gray-200/80 hover:border-gray-300"
-                      )}
-                    >
-                      <div className="min-w-0 flex-1">
-                        <div className="font-semibold text-sm text-gray-900 truncate">
-                          {patient.patientName}
-                        </div>
-                        <div className="text-[11px] text-gray-500 mt-1 flex flex-wrap gap-x-2 gap-y-0.5">
-                          <span>DNI: {patient.dni}</span>
-                          <span>•</span>
-                          <span>F.Nac: {patient.birthDate}</span>
-                        </div>
-                        <div className="flex flex-wrap gap-1 mt-1.5">
-                          {patient.matchedFields.map((f, i) => (
-                            <span key={i} className="text-[9px] bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded-md font-medium">
-                              {f}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-
-                      <div className="ml-3 text-right flex flex-col items-end shrink-0">
-                        <span className={cn(
-                          "text-xs font-bold px-2 py-0.5 rounded-full",
-                          patient.matchScore >= 100 
-                            ? "bg-emerald-100 text-emerald-700" 
-                            : patient.matchScore >= 50
-                              ? "bg-blue-100 text-blue-700"
-                              : "bg-amber-100 text-amber-700"
-                        )}>
-                          {Math.min(patient.matchScore, 100)}% Match
-                        </span>
-                        <ChevronRight className="w-4 h-4 text-gray-400 mt-1" />
-                      </div>
-                    </button>
-                  ))
+                  <div className="border border-gray-200 rounded-xl overflow-hidden shadow-xs">
+                    <table className="w-full text-left text-xs border-collapse">
+                      <thead className="bg-gray-50 text-gray-500 font-semibold border-b border-gray-200">
+                        <tr>
+                          <th className="px-3 py-2.5">Paciente</th>
+                          <th className="px-3 py-2.5">DNI</th>
+                          <th className="px-3 py-2.5 text-right">Match</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-100">
+                        {results.map((patient, index) => {
+                          const isSelected = selectedPatient?.patientName === patient.patientName;
+                          const initials = patient.patientName
+                            ? patient.patientName.split(' ').filter(Boolean).map(n => n[0]).join('').substring(0, 2).toUpperCase()
+                            : 'P';
+                          return (
+                            <tr
+                              key={index}
+                              onClick={() => handleSelectPatient(patient)}
+                              className={cn(
+                                "hover:bg-blue-50/30 cursor-pointer transition-all duration-150",
+                                isSelected ? "bg-blue-50/60 font-medium text-blue-950" : "bg-white text-gray-700"
+                              )}
+                            >
+                              <td className={cn(
+                                "px-3 py-2.5 align-middle border-l-4 transition-all duration-150",
+                                isSelected ? "border-l-blue-600" : "border-l-transparent"
+                              )}>
+                                <div className="flex items-center gap-2.5">
+                                  <div className={cn(
+                                    "w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0 transition-all duration-150",
+                                    isSelected 
+                                      ? "bg-blue-600 text-white shadow-xs" 
+                                      : "bg-blue-100 text-blue-700"
+                                  )}>
+                                    {initials}
+                                  </div>
+                                  <div className="min-w-0">
+                                    <div className="font-semibold text-gray-900 truncate max-w-[125px]" title={patient.patientName}>
+                                      {patient.patientName}
+                                    </div>
+                                    <div className="text-[10px] text-gray-400">{patient.birthDate}</div>
+                                  </div>
+                                </div>
+                              </td>
+                              <td className="px-3 py-2.5 font-medium text-gray-600 align-middle">
+                                {patient.dni}
+                              </td>
+                              <td className="px-3 py-2.5 text-right align-middle">
+                                <div className="flex flex-col items-end gap-1">
+                                  <span className={cn(
+                                    "text-[10px] font-bold px-1.5 py-0.5 rounded-full shrink-0 border",
+                                    patient.matchScore >= 90
+                                      ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                                      : patient.matchScore >= 50
+                                        ? "bg-blue-50 text-blue-700 border-blue-200"
+                                        : "bg-amber-50 text-amber-700 border-amber-200"
+                                  )}>
+                                    {Math.min(patient.matchScore, 100)}%
+                                  </span>
+                                  {/* Visual progress bar */}
+                                  <div className="w-12 bg-gray-200 rounded-full h-1 overflow-hidden mt-0.5">
+                                    <div 
+                                      className={cn(
+                                        "h-full rounded-full",
+                                        patient.matchScore >= 90 
+                                          ? "bg-emerald-500" 
+                                          : patient.matchScore >= 50
+                                            ? "bg-blue-500"
+                                            : "bg-amber-500"
+                                      )} 
+                                      style={{ width: `${Math.min(patient.matchScore, 100)}%` }}
+                                    ></div>
+                                  </div>
+                                  <span className="text-[9px] text-gray-400 font-normal truncate max-w-[80px]" title={patient.matchedFields.join(', ')}>
+                                    {patient.matchedFields[0] || 'Similar'}
+                                  </span>
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
                 )}
               </div>
             </div>
