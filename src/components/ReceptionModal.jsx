@@ -350,10 +350,10 @@ export function ReceptionModal({ isOpen, onClose, appointments, onUpdateAppointm
         )}
 
         {/* Content Body */}
-        <div className="flex-1 overflow-y-auto p-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <div className="flex-1 overflow-y-auto p-6 grid grid-cols-1 lg:grid-cols-12 gap-5">
           
-          {/* Left Column: Form & Search Results (5/12) */}
-          <div className="lg:col-span-5 flex flex-col gap-4 border-r border-gray-100 lg:pr-6">
+          {/* Left Column: Form & Search Results (6/12) */}
+          <div className="lg:col-span-6 flex flex-col gap-4 border-r border-gray-100 lg:pr-4">
             <div className="bg-gray-50 p-4 rounded-xl border border-gray-200/60">
               <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Buscar Paciente</h3>
               <div className="space-y-3">
@@ -421,12 +421,12 @@ export function ReceptionModal({ isOpen, onClose, appointments, onUpdateAppointm
                   </div>
                 ) : (
                   <div className="border border-gray-200 rounded-xl overflow-hidden shadow-xs">
-                    <table className="w-full text-left text-xs border-collapse">
+                    <table className="w-full text-left text-xs border-collapse table-fixed">
                       <thead className="bg-gray-50 text-gray-500 font-semibold border-b border-gray-200">
                         <tr>
-                          <th className="px-3 py-2.5">Paciente</th>
-                          <th className="px-3 py-2.5">DNI</th>
-                          <th className="px-3 py-2.5 text-right">Match</th>
+                          <th className="px-2 py-2 w-[46%]">Paciente</th>
+                          <th className="px-2 py-2 w-[30%]">DNI</th>
+                          <th className="px-2 py-2 text-right w-[24%]">Match</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-100">
@@ -445,12 +445,12 @@ export function ReceptionModal({ isOpen, onClose, appointments, onUpdateAppointm
                               )}
                             >
                               <td className={cn(
-                                "px-3 py-2.5 align-middle border-l-4 transition-all duration-150",
+                                "px-2 py-2.5 align-middle border-l-4 transition-all duration-150",
                                 isSelected ? "border-l-blue-600" : "border-l-transparent"
                               )}>
-                                <div className="flex items-center gap-2.5">
+                                <div className="flex items-center gap-2">
                                   <div className={cn(
-                                    "w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0 transition-all duration-150",
+                                    "w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 transition-all duration-150",
                                     isSelected 
                                       ? "bg-blue-600 text-white shadow-xs" 
                                       : "bg-blue-100 text-blue-700"
@@ -465,11 +465,11 @@ export function ReceptionModal({ isOpen, onClose, appointments, onUpdateAppointm
                                   </div>
                                 </div>
                               </td>
-                              <td className="px-3 py-2.5 font-medium text-gray-600 align-middle">
+                              <td className="px-2 py-2.5 font-medium text-gray-600 align-middle truncate" title={patient.dni}>
                                 {patient.dni}
                               </td>
-                              <td className="px-3 py-2.5 text-right align-middle">
-                                <div className="flex flex-col items-end gap-1">
+                              <td className="px-2 py-2.5 text-right align-middle">
+                                <div className="flex flex-col items-end gap-0.5">
                                   <span className={cn(
                                     "text-[10px] font-bold px-1.5 py-0.5 rounded-full shrink-0 border",
                                     patient.matchScore >= 90
@@ -481,7 +481,7 @@ export function ReceptionModal({ isOpen, onClose, appointments, onUpdateAppointm
                                     {Math.min(patient.matchScore, 100)}%
                                   </span>
                                   {/* Visual progress bar */}
-                                  <div className="w-12 bg-gray-200 rounded-full h-1 overflow-hidden mt-0.5">
+                                  <div className="w-10 bg-gray-200 rounded-full h-1 overflow-hidden mt-0.5">
                                     <div 
                                       className={cn(
                                         "h-full rounded-full",
@@ -510,8 +510,8 @@ export function ReceptionModal({ isOpen, onClose, appointments, onUpdateAppointm
             </div>
           </div>
 
-          {/* Right Column: Selected Patient Details & Appointments (7/12) */}
-          <div className="lg:col-span-7 flex flex-col gap-5 min-h-[300px]">
+          {/* Right Column: Selected Patient Details & Appointments (6/12) */}
+          <div className="lg:col-span-6 flex flex-col gap-5 min-h-[300px]">
             {selectedPatient ? (
               <div className="flex-1 flex flex-col gap-4">
                 
