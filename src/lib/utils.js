@@ -456,6 +456,18 @@ export const generateMockData = () => {
             }
         });
     });
+    const insurances = ["OSDE 310", "Swiss Medical", "Medicus", "PAMI", "Particular", "Galeno", "Sancor Salud"];
+    const finalWithInsurance = finalAppointments.map((app) => {
+        if (app.patientName) {
+            const charSum = app.patientName.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+            const insuranceIdx = charSum % insurances.length;
+            return {
+                ...app,
+                insurance: insurances[insuranceIdx]
+            };
+        }
+        return app;
+    });
 
-    return finalAppointments.sort((a, b) => a.time.localeCompare(b.time));
+    return finalWithInsurance.sort((a, b) => a.time.localeCompare(b.time));
 };

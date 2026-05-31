@@ -11,7 +11,8 @@ import {
   Stethoscope,
   Building2,
   AlertCircle,
-  FileText
+  FileText,
+  ArrowLeft
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { StatusBadge } from './StatusBadge';
@@ -51,6 +52,7 @@ const normalizeString = (str) => {
 };
 
 export function ReceptionModal({ isOpen, onClose, appointments, onUpdateAppointments }) {
+  const [step, setStep] = useState(1);
   const [searchForm, setSearchForm] = useState({
     dni: '',
     name: '',
@@ -66,6 +68,13 @@ export function ReceptionModal({ isOpen, onClose, appointments, onUpdateAppointm
   const [selectedSlot, setSelectedSlot] = useState('');
   const [availableSlots, setAvailableSlots] = useState([]);
   const [successMessage, setSuccessMessage] = useState('');
+
+  // Reset form when modal opens/closes
+  useEffect(() => {
+    if (!isOpen) {
+      resetForm();
+    }
+  }, [isOpen]);
 
   // Extract unique patients from current appointments database
   const getUniquePatients = () => {
@@ -84,7 +93,8 @@ export function ReceptionModal({ isOpen, onClose, appointments, onUpdateAppointm
             reasonForVisit: app.reasonForVisit,
             chronicConditions: app.chronicConditions,
             medications: app.medications,
-            riskFactors: app.riskFactors
+            riskFactors: app.riskFactors,
+            insurance: app.insurance
           });
         }
       }
@@ -231,6 +241,7 @@ export function ReceptionModal({ isOpen, onClose, appointments, onUpdateAppointm
 
   const handleSelectPatient = (patient) => {
     setSelectedPatient(patient);
+    setStep(2);
   };
 
   const handleCheckIn = (appointmentId) => {
@@ -299,6 +310,7 @@ export function ReceptionModal({ isOpen, onClose, appointments, onUpdateAppointm
     setShowExpressBooking(false);
     setSelectedDoctor('');
     setSelectedSlot('');
+    setStep(1);
   };
 
   const uniqueDoctors = [...new Set(appointments.map(a => a.doctorName))];
@@ -322,12 +334,14 @@ export function ReceptionModal({ isOpen, onClose, appointments, onUpdateAppointm
             <div>
               <h2 className="text-xl font-bold text-gray-900">Recepción Express</h2>
               <p className="text-xs text-gray-500 mb-2">Módulo de Admisión y Recepción de Pacientes</p>
-              <div className="text-[10px] text-indigo-700 bg-indigo-50 border border-indigo-100 rounded-lg px-3 py-1.5 flex flex-col gap-0.5 shadow-xs">
-                <span className="font-bold flex items-center gap-1"><Sparkles className="w-3 h-3 text-indigo-500" /> Pacientes de prueba (copia para buscar):</span>
-                <span>• Juan Perez (DNI: 12.345.678 | F.Nac: 15/05/1980)</span>
-                <span>• Maria Lopez (DNI: 23.456.789 | F.Nac: 22/11/1962)</span>
-                <span>• Pedro Pascal (DNI: 99.111.222 | F.Nac: 02/04/1975)</span>
-              </div>
+              {step === 1 && (
+                <div className="text-[10px] text-indigo-700 bg-indigo-50 border border-indigo-100 rounded-lg px-3 py-1.5 flex flex-col gap-0.5 shadow-xs">
+                  <span className="font-bold flex items-center gap-1"><Sparkles className="w-3 h-3 text-indigo-500" /> Pacientes de prueba (copia para buscar):</span>
+                  <span>• Juan Perez (DNI: 12.345.678 | F.Nac: 15/05/1980)</span>
+                  <span>• Maria Lopez (DNI: 23.456.789 | F.Nac: 22/11/1962)</span>
+                  <span>• Pedro Pascal (DNI: 99.111.222 | F.Nac: 02/04/1975)</span>
+                </div>
+              )}
             </div>
           </div>
           <button
@@ -350,13 +364,12 @@ export function ReceptionModal({ isOpen, onClose, appointments, onUpdateAppointm
         )}
 
         {/* Content Body */}
-        <div className="flex-1 overflow-y-auto p-6 grid grid-cols-1 lg:grid-cols-12 gap-5">
-          
-          {/* Left Column: Form & Search Results (6/12) */}
-          <div className="lg:col-span-6 flex flex-col gap-4 border-r border-gray-100 lg:pr-4">
-            <div className="bg-gray-50 p-4 rounded-xl border border-gray-200/60">
+        {step === 1 ? (
+          <div className="flex-1 overflow-hidden p-6 flex flex-col gap-5">
+            {/* Horizontal Search Form */}
+            <div className="bg-gray-50 p-4 rounded-xl border border-gray-200/60 shrink-0">
               <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Buscar Paciente</h3>
-              <div className="space-y-3">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {/* DNI Input */}
                 <div>
                   <label className="block text-xs font-medium text-gray-600 mb-1">DNI</label>
@@ -400,38 +413,44 @@ export function ReceptionModal({ isOpen, onClose, appointments, onUpdateAppointm
               </div>
             </div>
 
-
-
-            {/* Match Results List */}
-            <div className="flex-1 flex flex-col min-h-[250px]">
-              <div className="flex justify-between items-center mb-2">
-                <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Coincidencias Encontradas</h3>
+            {/* Match Results Table (Full width) */}
+            <div className="flex-1 flex flex-col min-h-0">
+              <div className="flex justify-between items-center mb-3 shrink-0">
+                <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider flex items-center gap-1.5">
+                  <Search className="w-3.5 h-3.5 text-blue-500" />
+                  Coincidencias Encontradas
+                </h3>
                 {results.length > 0 && (
-                  <span className="text-[10px] font-bold bg-blue-100 text-blue-600 px-2 py-0.5 rounded-full">
+                  <span className="text-[10px] font-bold bg-blue-100 text-blue-600 px-2.5 py-0.5 rounded-full">
                     {results.length} coincidencias
                   </span>
                 )}
               </div>
 
-              <div className="flex-1 overflow-y-auto max-h-[300px] pr-1">
+              <div className="flex-1 flex flex-col min-h-0">
                 {results.length === 0 ? (
-                  <div className="h-full flex flex-col items-center justify-center text-center p-4 border border-dashed border-gray-200 rounded-xl bg-gray-50/50">
-                    <Search className="w-8 h-8 text-gray-300 mb-2" />
-                    <p className="text-xs text-gray-400 font-medium">Completa los 3 campos (DNI, Nombre y F. Nacimiento) para buscar coincidencias en la base de pacientes.</p>
+                  <div className="flex-1 flex flex-col items-center justify-center text-center p-8 border border-dashed border-gray-200 rounded-xl bg-gray-50/50">
+                    <Search className="w-10 h-10 text-gray-300 mb-3" />
+                    <p className="text-sm text-gray-500 font-semibold mb-1">Comienza tu búsqueda</p>
+                    <p className="text-xs text-gray-400 max-w-md">
+                      Completa los 3 campos de búsqueda de arriba para filtrar y seleccionar un paciente de nuestra base de datos.
+                    </p>
                   </div>
                 ) : (
-                  <div className="border border-gray-200 rounded-xl overflow-hidden shadow-xs">
+                  <div className="flex-1 overflow-y-auto border border-gray-200 rounded-xl shadow-xs bg-white">
                     <table className="w-full text-left text-xs border-collapse table-fixed">
-                      <thead className="bg-gray-50 text-gray-500 font-semibold border-b border-gray-200">
+                      <thead className="bg-gray-50 text-gray-500 font-semibold border-b border-gray-200 sticky top-0 z-10 shadow-xs">
                         <tr>
-                          <th className="px-2 py-2 w-[46%]">Paciente</th>
-                          <th className="px-2 py-2 w-[30%]">DNI</th>
-                          <th className="px-2 py-2 text-right w-[24%]">Match</th>
+                          <th className="px-4 py-3 w-[25%] bg-gray-50">Paciente</th>
+                          <th className="px-4 py-3 w-[14%] bg-gray-50">DNI</th>
+                          <th className="px-4 py-3 w-[16%] bg-gray-50">Edad / Género</th>
+                          <th className="px-4 py-3 w-[18%] bg-gray-50">Cobertura Médica</th>
+                          <th className="px-4 py-3 w-[12%] bg-gray-50">Grupo Sang.</th>
+                          <th className="px-4 py-3 text-right w-[15%] bg-gray-50">Match</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-100">
                         {results.map((patient, index) => {
-                          const isSelected = selectedPatient?.patientName === patient.patientName;
                           const initials = patient.patientName
                             ? patient.patientName.split(' ').filter(Boolean).map(n => n[0]).join('').substring(0, 2).toUpperCase()
                             : 'P';
@@ -439,36 +458,36 @@ export function ReceptionModal({ isOpen, onClose, appointments, onUpdateAppointm
                             <tr
                               key={index}
                               onClick={() => handleSelectPatient(patient)}
-                              className={cn(
-                                "hover:bg-blue-50/30 cursor-pointer transition-all duration-150",
-                                isSelected ? "bg-blue-50/60 font-medium text-blue-950" : "bg-white text-gray-700"
-                              )}
+                              className="hover:bg-blue-50/30 cursor-pointer transition-all duration-150 text-gray-700 bg-white"
                             >
-                              <td className={cn(
-                                "px-2 py-2.5 align-middle border-l-4 transition-all duration-150",
-                                isSelected ? "border-l-blue-600" : "border-l-transparent"
-                              )}>
-                                <div className="flex items-center gap-2">
-                                  <div className={cn(
-                                    "w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 transition-all duration-150",
-                                    isSelected 
-                                      ? "bg-blue-600 text-white shadow-xs" 
-                                      : "bg-blue-100 text-blue-700"
-                                  )}>
+                              <td className="px-4 py-3.5 align-middle border-l-4 border-l-transparent">
+                                <div className="flex items-center gap-3">
+                                  <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0 bg-blue-100 text-blue-700">
                                     {initials}
                                   </div>
                                   <div className="min-w-0">
-                                    <div className="font-semibold text-gray-900 truncate max-w-[125px]" title={patient.patientName}>
+                                    <div className="font-semibold text-gray-900 truncate" title={patient.patientName}>
                                       {patient.patientName}
                                     </div>
-                                    <div className="text-[10px] text-gray-400">{patient.birthDate}</div>
+                                    <div className="text-[10px] text-gray-400">Nac: {patient.birthDate}</div>
                                   </div>
                                 </div>
                               </td>
-                              <td className="px-2 py-2.5 font-medium text-gray-600 align-middle truncate" title={patient.dni}>
+                              <td className="px-4 py-3.5 font-medium text-gray-600 align-middle truncate" title={patient.dni}>
                                 {patient.dni}
                               </td>
-                              <td className="px-2 py-2.5 text-right align-middle">
+                              <td className="px-4 py-3.5 text-gray-600 align-middle truncate">
+                                {patient.age} años • {patient.gender}
+                              </td>
+                              <td className="px-4 py-3.5 font-medium text-gray-600 align-middle truncate" title={patient.insurance}>
+                                {patient.insurance || 'Particular'}
+                              </td>
+                              <td className="px-4 py-3.5 text-gray-600 align-middle">
+                                <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-slate-100 text-slate-700 font-bold border border-slate-200">
+                                  {patient.bloodType || 'N/A'}
+                                </span>
+                              </td>
+                              <td className="px-4 py-3.5 text-right align-middle">
                                 <div className="flex flex-col items-end gap-0.5">
                                   <span className={cn(
                                     "text-[10px] font-bold px-1.5 py-0.5 rounded-full shrink-0 border",
@@ -509,220 +528,219 @@ export function ReceptionModal({ isOpen, onClose, appointments, onUpdateAppointm
               </div>
             </div>
           </div>
+        ) : (
+          <div className="flex-1 overflow-hidden p-6 flex flex-col gap-5">
+            {/* Back button */}
+            <div className="flex items-center shrink-0">
+              <button
+                onClick={() => setStep(1)}
+                className="flex items-center gap-1.5 text-xs text-blue-600 hover:text-blue-800 font-semibold hover:underline transition-colors bg-blue-50 px-3 py-1.5 rounded-lg border border-blue-100"
+              >
+                <ArrowLeft className="w-3.5 h-3.5" />
+                Volver a la búsqueda de pacientes
+              </button>
+            </div>
 
-          {/* Right Column: Selected Patient Details & Appointments (6/12) */}
-          <div className="lg:col-span-6 flex flex-col gap-5 min-h-[300px]">
-            {selectedPatient ? (
-              <div className="flex-1 flex flex-col gap-4">
-                
-                {/* Patient Micro-Card */}
-                <div className="bg-slate-900 text-white p-5 rounded-2xl shadow-lg relative overflow-hidden">
-                  <div className="absolute right-0 top-0 translate-x-4 -translate-y-4 w-28 h-28 bg-white/5 rounded-full pointer-events-none"></div>
-                  
-                  <div className="flex justify-between items-start mb-3">
-                    <div>
-                      <span className="text-[10px] bg-blue-500/30 text-blue-200 px-2.5 py-1 rounded-full font-bold uppercase tracking-wider">
-                        Paciente Seleccionado
-                      </span>
-                      <h3 className="text-xl font-bold mt-2">{selectedPatient.patientName}</h3>
+            {/* Selected Patient Micro-Card */}
+            <div className="bg-slate-900 text-white p-5 rounded-2xl shadow-lg relative overflow-hidden shrink-0">
+              <div className="absolute right-0 top-0 translate-x-4 -translate-y-4 w-28 h-28 bg-white/5 rounded-full pointer-events-none"></div>
+              
+              <div className="flex justify-between items-start mb-3">
+                <div>
+                  <span className="text-[10px] bg-blue-500/30 text-blue-200 px-2.5 py-1 rounded-full font-bold uppercase tracking-wider">
+                    Paciente Seleccionado
+                  </span>
+                  <h3 className="text-xl font-bold mt-2">{selectedPatient.patientName}</h3>
+                </div>
+                <div className="text-right">
+                  <p className="text-xs text-slate-400">Grupo Sanguíneo</p>
+                  <p className="text-lg font-bold text-blue-400">{selectedPatient.bloodType || 'N/A'}</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-4 gap-4 pt-3 border-t border-white/10 text-xs text-slate-300">
+                <div>
+                  <p className="text-slate-400 mb-0.5">DNI</p>
+                  <p className="font-semibold text-white">{selectedPatient.dni}</p>
+                </div>
+                <div>
+                  <p className="text-slate-400 mb-0.5">F. Nacimiento</p>
+                  <p className="font-semibold text-white">{selectedPatient.birthDate}</p>
+                </div>
+                <div>
+                  <p className="text-slate-400 mb-0.5">Edad / Género</p>
+                  <p className="font-semibold text-white">{selectedPatient.age} años • {selectedPatient.gender}</p>
+                </div>
+                <div>
+                  <p className="text-slate-400 mb-0.5">Cobertura Médica</p>
+                  <p className="font-semibold text-blue-300 truncate" title={selectedPatient.insurance}>{selectedPatient.insurance || 'Particular'}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Patient Appointments for Today */}
+            {!showExpressBooking ? (
+              <div className="flex-1 flex flex-col min-h-0">
+                <div className="flex justify-between items-center mb-3 shrink-0">
+                  <h3 className="text-sm font-bold text-gray-800 flex items-center gap-1.5">
+                    <Calendar className="w-4 h-4 text-blue-500" />
+                    Turnos de Hoy
+                  </h3>
+                  <button
+                    onClick={() => setShowExpressBooking(true)}
+                    className="text-xs font-semibold text-blue-600 hover:text-blue-800 flex items-center gap-1 hover:underline transition-colors"
+                  >
+                    <PlusCircle className="w-3.5 h-3.5" />
+                    Turno Express
+                  </button>
+                </div>
+
+                <div className="flex-1 overflow-y-auto space-y-3 pr-1">
+                  {patientAppointments.length === 0 ? (
+                    <div className="text-center p-8 border border-dashed border-gray-200 rounded-xl bg-gray-50 flex flex-col items-center justify-center">
+                      <AlertCircle className="w-8 h-8 text-amber-500 mb-2" />
+                      <p className="text-sm font-semibold text-gray-800 mb-1">Sin turnos para hoy</p>
+                      <p className="text-xs text-gray-500 mb-4 max-w-xs">Este paciente no tiene turnos programados en el día de hoy.</p>
+                      <button
+                        onClick={() => setShowExpressBooking(true)}
+                        className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold shadow-sm flex items-center gap-1.5 transition-colors"
+                      >
+                        <PlusCircle className="w-4 h-4" />
+                        Agendar Turno Express
+                      </button>
                     </div>
-                    <div className="text-right">
-                      <p className="text-xs text-slate-400">Grupo Sanguíneo</p>
-                      <p className="text-lg font-bold text-blue-400">{selectedPatient.bloodType || 'N/A'}</p>
-                    </div>
+                  ) : (
+                    patientAppointments.map((app) => {
+                      const canCheckIn = app.status === 'scheduled' || app.status === 'absent' || app.status === 'cancelled';
+                      const isWaiting = app.status === 'waiting' || app.status === 'called';
+
+                      return (
+                        <div
+                          key={app.id}
+                          className={cn(
+                            "p-4 rounded-xl border flex flex-col md:flex-row md:items-center justify-between gap-4 transition-all bg-white",
+                            canCheckIn ? "border-amber-200 bg-amber-50/20" : "border-gray-200"
+                          )}
+                        >
+                          <div className="flex items-start gap-3">
+                            <div className="bg-gray-100 p-2 rounded-lg text-gray-600 flex flex-col items-center justify-center shrink-0">
+                              <Clock className="w-4 h-4" />
+                              <span className="text-xs font-bold mt-0.5">{app.time}</span>
+                            </div>
+                            <div className="min-w-0">
+                              <div className="flex items-center gap-2">
+                                <span className="font-semibold text-sm text-gray-900">{app.doctorName}</span>
+                                <StatusBadge status={app.status} />
+                              </div>
+                              <div className="text-xs text-gray-500 mt-1 flex items-center gap-2">
+                                <span className="flex items-center gap-1">
+                                  <Building2 className="w-3 h-3" />
+                                  Cons: {app.room}
+                                </span>
+                                <span>•</span>
+                                <span className="truncate max-w-[200px]" title={app.reasonForVisit}>
+                                  Motivo: {app.reasonForVisit}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="shrink-0 flex justify-end">
+                            {canCheckIn ? (
+                              <button
+                                onClick={() => handleCheckIn(app.id)}
+                                className="w-full md:w-auto px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold shadow-sm flex items-center justify-center gap-1.5 transition-all active:scale-95"
+                              >
+                                <UserCheck className="w-4 h-4" />
+                                Recepcionar
+                              </button>
+                            ) : (
+                              <div className="text-xs font-medium text-gray-400 bg-gray-50 border border-gray-100 px-3 py-1.5 rounded-lg">
+                                {isWaiting ? "En sala de espera" : app.status === 'consulting' ? "En consulta" : "Consulta finalizada"}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+              </div>
+            ) : (
+              /* Express Booking Form */
+              <form onSubmit={handleCreateExpressBooking} className="flex-1 bg-gray-50 p-4 border border-gray-200 rounded-xl flex flex-col gap-4 animate-in fade-in duration-200">
+                <div className="flex justify-between items-center">
+                  <h3 className="text-xs font-bold text-gray-700 uppercase tracking-wider flex items-center gap-1.5">
+                    <Stethoscope className="w-4 h-4 text-blue-500" />
+                    Agendar Turno Express
+                  </h3>
+                  <button
+                    type="button"
+                    onClick={() => setShowExpressBooking(false)}
+                    className="text-xs font-semibold text-gray-500 hover:text-gray-800"
+                  >
+                    Cancelar
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Doctor Selection */}
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">Médico</label>
+                    <select
+                      value={selectedDoctor}
+                      onChange={(e) => {
+                        setSelectedDoctor(e.target.value);
+                        setSelectedSlot('');
+                      }}
+                      required
+                      className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:outline-hidden focus:ring-2 focus:ring-blue-500/20"
+                    >
+                      <option value="">Seleccionar Médico...</option>
+                      {uniqueDoctors.map((doc, idx) => (
+                        <option key={idx} value={doc}>{doc}</option>
+                      ))}
+                    </select>
                   </div>
 
-                  <div className="grid grid-cols-3 gap-4 pt-3 border-t border-white/10 text-xs text-slate-300">
-                    <div>
-                      <p className="text-slate-400 mb-0.5">DNI</p>
-                      <p className="font-semibold text-white">{selectedPatient.dni}</p>
-                    </div>
-                    <div>
-                      <p className="text-slate-400 mb-0.5">F. Nacimiento</p>
-                      <p className="font-semibold text-white">{selectedPatient.birthDate}</p>
-                    </div>
-                    <div>
-                      <p className="text-slate-400 mb-0.5">Edad / Género</p>
-                      <p className="font-semibold text-white">{selectedPatient.age} años • {selectedPatient.gender}</p>
-                    </div>
+                  {/* Slot Selection */}
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">Horario Disponible (Hoy)</label>
+                    <select
+                      value={selectedSlot}
+                      onChange={(e) => setSelectedSlot(e.target.value)}
+                      required
+                      disabled={!selectedDoctor}
+                      className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:outline-hidden focus:ring-2 focus:ring-blue-500/20 disabled:opacity-50"
+                    >
+                      <option value="">
+                        {!selectedDoctor 
+                          ? "Selecciona un médico primero..." 
+                          : availableSlots.length === 0 
+                            ? "Sin horarios disponibles hoy" 
+                            : "Seleccionar Horario..."}
+                      </option>
+                      {availableSlots.map((slot) => (
+                        <option key={slot.id} value={slot.time}>
+                          {slot.time} (Consultorio {slot.room})
+                        </option>
+                      ))}
+                    </select>
                   </div>
                 </div>
 
-                {/* Patient Appointments for Today */}
-                {!showExpressBooking ? (
-                  <div className="flex-1 flex flex-col">
-                    <div className="flex justify-between items-center mb-3">
-                      <h3 className="text-sm font-bold text-gray-800 flex items-center gap-1.5">
-                        <Calendar className="w-4 h-4 text-blue-500" />
-                        Turnos de Hoy
-                      </h3>
-                      <button
-                        onClick={() => setShowExpressBooking(true)}
-                        className="text-xs font-semibold text-blue-600 hover:text-blue-800 flex items-center gap-1 hover:underline transition-colors"
-                      >
-                        <PlusCircle className="w-3.5 h-3.5" />
-                        Turno Express
-                      </button>
-                    </div>
-
-                    <div className="flex-1 overflow-y-auto space-y-3 max-h-[300px] pr-1">
-                      {patientAppointments.length === 0 ? (
-                        <div className="text-center p-8 border border-dashed border-gray-200 rounded-xl bg-gray-50 flex flex-col items-center justify-center">
-                          <AlertCircle className="w-8 h-8 text-amber-500 mb-2" />
-                          <p className="text-sm font-semibold text-gray-800 mb-1">Sin turnos para hoy</p>
-                          <p className="text-xs text-gray-500 mb-4 max-w-xs">Este paciente no tiene turnos programados en el día de hoy.</p>
-                          <button
-                            onClick={() => setShowExpressBooking(true)}
-                            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold shadow-sm flex items-center gap-1.5 transition-colors"
-                          >
-                            <PlusCircle className="w-4 h-4" />
-                            Agendar Turno Express
-                          </button>
-                        </div>
-                      ) : (
-                        patientAppointments.map((app) => {
-                          const canCheckIn = app.status === 'scheduled' || app.status === 'absent' || app.status === 'cancelled';
-                          const isWaiting = app.status === 'waiting' || app.status === 'called';
-
-                          return (
-                            <div
-                              key={app.id}
-                              className={cn(
-                                "p-4 rounded-xl border flex flex-col md:flex-row md:items-center justify-between gap-4 transition-all bg-white",
-                                canCheckIn ? "border-amber-200 bg-amber-50/20" : "border-gray-200"
-                              )}
-                            >
-                              <div className="flex items-start gap-3">
-                                <div className="bg-gray-100 p-2 rounded-lg text-gray-600 flex flex-col items-center justify-center shrink-0">
-                                  <Clock className="w-4 h-4" />
-                                  <span className="text-xs font-bold mt-0.5">{app.time}</span>
-                                </div>
-                                <div className="min-w-0">
-                                  <div className="flex items-center gap-2">
-                                    <span className="font-semibold text-sm text-gray-900">{app.doctorName}</span>
-                                    <StatusBadge status={app.status} />
-                                  </div>
-                                  <div className="text-xs text-gray-500 mt-1 flex items-center gap-2">
-                                    <span className="flex items-center gap-1">
-                                      <Building2 className="w-3 h-3" />
-                                      Cons: {app.room}
-                                    </span>
-                                    <span>•</span>
-                                    <span className="truncate max-w-[200px]" title={app.reasonForVisit}>
-                                      Motivo: {app.reasonForVisit}
-                                    </span>
-                                  </div>
-                                </div>
-                              </div>
-
-                              <div className="shrink-0 flex justify-end">
-                                {canCheckIn ? (
-                                  <button
-                                    onClick={() => handleCheckIn(app.id)}
-                                    className="w-full md:w-auto px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold shadow-sm flex items-center justify-center gap-1.5 transition-all active:scale-95"
-                                  >
-                                    <UserCheck className="w-4 h-4" />
-                                    Recepcionar
-                                  </button>
-                                ) : (
-                                  <div className="text-xs font-medium text-gray-400 bg-gray-50 border border-gray-100 px-3 py-1.5 rounded-lg">
-                                    {isWaiting ? "En sala de espera" : app.status === 'consulting' ? "En consulta" : "Consulta finalizada"}
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                          );
-                        })
-                      )}
-                    </div>
-                  </div>
-                ) : (
-                  /* Express Booking Form */
-                  <form onSubmit={handleCreateExpressBooking} className="flex-1 bg-gray-50 p-4 border border-gray-200 rounded-xl flex flex-col gap-4 animate-in fade-in duration-200">
-                    <div className="flex justify-between items-center">
-                      <h3 className="text-xs font-bold text-gray-700 uppercase tracking-wider flex items-center gap-1.5">
-                        <Stethoscope className="w-4 h-4 text-blue-500" />
-                        Agendar Turno Express
-                      </h3>
-                      <button
-                        type="button"
-                        onClick={() => setShowExpressBooking(false)}
-                        className="text-xs font-semibold text-gray-500 hover:text-gray-800"
-                      >
-                        Cancelar
-                      </button>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {/* Doctor Selection */}
-                      <div>
-                        <label className="block text-xs font-medium text-gray-600 mb-1">Médico</label>
-                        <select
-                          value={selectedDoctor}
-                          onChange={(e) => {
-                            setSelectedDoctor(e.target.value);
-                            setSelectedSlot('');
-                          }}
-                          required
-                          className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:outline-hidden focus:ring-2 focus:ring-blue-500/20"
-                        >
-                          <option value="">Seleccionar Médico...</option>
-                          {uniqueDoctors.map((doc, idx) => (
-                            <option key={idx} value={doc}>{doc}</option>
-                          ))}
-                        </select>
-                      </div>
-
-                      {/* Slot Selection */}
-                      <div>
-                        <label className="block text-xs font-medium text-gray-600 mb-1">Horario Disponible (Hoy)</label>
-                        <select
-                          value={selectedSlot}
-                          onChange={(e) => setSelectedSlot(e.target.value)}
-                          required
-                          disabled={!selectedDoctor}
-                          className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:outline-hidden focus:ring-2 focus:ring-blue-500/20 disabled:opacity-50"
-                        >
-                          <option value="">
-                            {!selectedDoctor 
-                              ? "Selecciona un médico primero..." 
-                              : availableSlots.length === 0 
-                                ? "Sin horarios disponibles hoy" 
-                                : "Seleccionar Horario..."}
-                          </option>
-                          {availableSlots.map((slot) => (
-                            <option key={slot.id} value={slot.time}>
-                              {slot.time} (Consultorio {slot.room})
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                    </div>
-
-                    <button
-                      type="submit"
-                      disabled={!selectedDoctor || !selectedSlot}
-                      className="w-full mt-2 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 text-white rounded-lg text-xs font-bold shadow-md transition-colors flex items-center justify-center gap-1.5"
-                    >
-                      <Sparkles className="w-4 h-4" />
-                      Confirmar y Recepcionar
-                    </button>
-                  </form>
-                )}
-
-              </div>
-            ) : (
-              <div className="flex-1 flex flex-col items-center justify-center text-center p-8 border border-dashed border-gray-200 rounded-2xl bg-gray-50/50">
-                <FileText className="w-12 h-12 text-gray-300 mb-3" />
-                <h3 className="font-semibold text-gray-800 text-sm mb-1">Ningún Paciente Seleccionado</h3>
-                <p className="text-xs text-gray-400 max-w-sm">
-                  Busca y selecciona un paciente de la lista izquierda para gestionar sus turnos y confirmar su recepción.
-                </p>
-              </div>
+                <button
+                  type="submit"
+                  disabled={!selectedDoctor || !selectedSlot}
+                  className="w-full mt-2 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 text-white rounded-lg text-xs font-bold shadow-md transition-colors flex items-center justify-center gap-1.5"
+                >
+                  <Sparkles className="w-4 h-4" />
+                  Confirmar y Recepcionar
+                </button>
+              </form>
             )}
           </div>
-
-        </div>
+        )}
 
         {/* Footer */}
         <div className="p-4 border-t border-gray-100 bg-gray-50 flex justify-between items-center text-xs text-gray-400">
