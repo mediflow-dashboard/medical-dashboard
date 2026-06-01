@@ -25,6 +25,7 @@ import { RoomCalendar } from './components/RoomCalendar';
 import { generateMockData, cn } from './lib/utils';
 import { ReceptionModal } from './components/ReceptionModal';
 import { PatientTimeline } from './components/PatientTimeline';
+import { OnboardingTour } from './components/OnboardingTour';
 
 const STATUS_FILTER_MAP = {
   'Programado': 'scheduled',
@@ -41,6 +42,51 @@ const TOTAL_ROOMS = 6; // Fixed total for prototype
 const MAX_WAITING_CAPACITY = 15; // Max capacity for waiting room
 const MAX_WAIT_TIME_SLA = 20; // Max acceptable wait time in minutes
 
+const TOUR_STEPS = [
+  {
+    selector: '[data-tour="role-switcher"]',
+    title: 'Selector de Vista (Roles)',
+    content: 'Como recepcionista, trabajas desde la Vista Administrativa para ver la agenda global. Este selector te permite alternar de rol para colaborar con médicos o coordinadores.',
+    benefit: 'Acceso centralizado a las herramientas adecuadas para cada momento de tu jornada.',
+    placement: 'left'
+  },
+  {
+    selector: '[data-tour="kpi-waiting"]',
+    title: 'Total Pacientes en Espera',
+    content: 'Monitorea en tiempo real cuántos pacientes se encuentran físicamente en la sala de espera y la capacidad máxima autorizada.',
+    benefit: 'Te ayuda a anticipar cuellos de botella y regular proactivamente el flujo de admisiones en el mostrador.',
+    placement: 'bottom'
+  },
+  {
+    selector: '[data-tour="kpi-delay"]',
+    title: 'Demora Promedio de Espera',
+    content: 'Controla el tiempo medio de espera de los pacientes desde que son recepcionados y compáralo con el objetivo de calidad (SLA).',
+    benefit: 'Te brinda datos objetivos para empatizar con los pacientes e informarles con precisión cuánto demorará su consulta.',
+    placement: 'bottom'
+  },
+  {
+    selector: '[data-tour="reception-btn"]',
+    title: 'Módulo de Recepción Express',
+    content: 'Este es tu botón principal de trabajo. Abre el buscador inteligente para admitir pacientes por DNI o agendar turnos rápidos directos a sala.',
+    benefit: 'Agiliza la admisión presencial reduciendo el trámite administrativo a solo dos clics.',
+    placement: 'left'
+  },
+  {
+    selector: '[data-tour="patient-ia-summary"]',
+    title: 'Resúmenes Clínicos por IA',
+    content: 'Pasa el cursor sobre el nombre de cualquier paciente para desplegar su ficha y una síntesis clínica compacta redactada por Inteligencia Artificial.',
+    benefit: 'Te advierte al instante de riesgos críticos (alergias, movilidad reducida) o coberturas médicas impagas antes de admitirlo.',
+    placement: 'right'
+  },
+  {
+    selector: '[data-tour="patient-timeline-bar"]',
+    title: 'Línea de Tiempo de Espera',
+    content: 'Observa la barra de colores del paciente: verde si llegó temprano, naranja si llegó tarde y azul animado para su tiempo de espera actual.',
+    benefit: 'Te permite detectar demoras excesivas y priorizar visualmente a los pacientes que llevan más tiempo en sala.',
+    placement: 'top'
+  }
+];
+
 function App() {
   const [appointments, setAppointments] = useState([]);
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -51,6 +97,7 @@ function App() {
   const [selectedStatus, setSelectedStatus] = useState('all'); // For Status filter
   const [viewMode, setViewMode] = useState('calendar'); // 'calendar' or 'list'
   const [isReceptionModalOpen, setIsReceptionModalOpen] = useState(false);
+  const [isTourOpen, setIsTourOpen] = useState(false);
 
   // Initialize data
   useEffect(() => {
@@ -249,9 +296,21 @@ function App() {
               <div className="text-xs text-gray-500">{currentTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
             </div>
 
+            {currentRole === 'admin' && (
+              <button
+                onClick={() => setIsTourOpen(true)}
+                className="flex items-center gap-1.5 px-3 py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 hover:text-blue-800 rounded-lg border border-blue-100 transition-colors text-xs font-semibold shadow-xs active:scale-95 transition-transform shrink-0"
+                title="Iniciar recorrido guiado explicativo"
+              >
+                <Sparkles className="w-3.5 h-3.5 text-blue-500" />
+                <span>¿Cómo funciona?</span>
+              </button>
+            )}
+
             {/* Role Switcher */}
             <div className="relative">
               <button
+                data-tour="role-switcher"
                 onClick={() => setIsRoleMenuOpen(!isRoleMenuOpen)}
                 className="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors text-sm font-medium text-gray-700"
               >
@@ -325,6 +384,7 @@ function App() {
           ) : (
             <>
               <MetricCard
+                dataTour="kpi-waiting"
                 icon={<Users className="w-5 h-5 text-blue-600" />}
                 title={currentRole === 'medical' ? "Mis Pacientes en Espera" : "Total Pacientes en Espera"}
                 value={currentRole === 'medical' ? waitingPatients : `${waitingPatients} / ${MAX_WAITING_CAPACITY}`}
@@ -332,6 +392,7 @@ function App() {
                 trendColor={waitingPatients > 4 ? "text-red-600" : "text-green-600"}
               />
               <MetricCard
+                dataTour="kpi-delay"
                 icon={<Clock className="w-5 h-5 text-orange-600" />}
                 title="Demora Promedio"
                 value={`${avgWaitTime} min / ${MAX_WAIT_TIME_SLA} min`}
@@ -424,6 +485,7 @@ function App() {
 
             {currentRole === 'admin' && (
               <button
+                data-tour="reception-btn"
                 onClick={() => setIsReceptionModalOpen(true)}
                 className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors shadow-sm active:scale-95 transition-transform"
               >
@@ -457,7 +519,7 @@ function App() {
                       </td>
                     </tr>
                   ) : (
-                    tableData.map((app) => {
+                    tableData.map((app, index) => {
                       const currentWaitTime = getWaitTime(app); // Patient Experience (Time since check-in)
                       const medicalDelay = getActualMedicalDelay(app); // Improved Doctor Delay KPI
 
@@ -505,7 +567,10 @@ function App() {
                           <td className="px-6 py-4 font-medium text-gray-900">{app.time}</td>
 
                           {/* Paciente */}
-                          <td className="px-6 py-4">
+                          <td 
+                            className="px-6 py-4"
+                            data-tour={index === 0 ? "patient-ia-summary" : undefined}
+                          >
                             {isAvailable ? (
                               <span className="text-gray-400 italic">Disponible</span>
                             ) : (
@@ -560,7 +625,10 @@ function App() {
                           </td>
 
                           {/* Tiempo en Sala (Experiencia Paciente) */}
-                          <td className="px-6 py-4">
+                          <td 
+                            className="px-6 py-4"
+                            data-tour={index === 0 ? "patient-timeline-bar" : undefined}
+                          >
                             {isCheckedIn ? (
                               <PatientTimeline appointment={app} currentTime={currentTime} />
                             ) : (
@@ -643,13 +711,19 @@ function App() {
         appointments={appointments}
         onUpdateAppointments={setAppointments}
       />
+
+      <OnboardingTour
+        isOpen={isTourOpen}
+        steps={TOUR_STEPS}
+        onClose={() => setIsTourOpen(false)}
+      />
     </div>
   );
 }
 
-function MetricCard({ icon, title, value, trend, trendColor }) {
+function MetricCard({ icon, title, value, trend, trendColor, dataTour }) {
   return (
-    <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
+    <div data-tour={dataTour} className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
       <div className="flex justify-between items-start mb-4">
         <div className="p-2 bg-gray-50 rounded-lg">{icon}</div>
         <span className={cn("text-xs font-medium px-2 py-1 rounded-full bg-gray-100", trendColor)}>
