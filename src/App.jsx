@@ -16,7 +16,8 @@ import {
   CalendarClock,
   Filter,
   Sparkles,
-  UserX
+  UserX,
+  Tv
 } from 'lucide-react';
 import { StatusBadge } from './components/StatusBadge';
 import { AISummaryTooltip } from './components/AISummaryTooltip';
@@ -26,6 +27,7 @@ import { generateMockData, cn } from './lib/utils';
 import { ReceptionModal } from './components/ReceptionModal';
 import { PatientTimeline } from './components/PatientTimeline';
 import { OnboardingTour } from './components/OnboardingTour';
+import { PresentationView } from './components/PresentationView';
 
 const STATUS_FILTER_MAP = {
   'Programado': 'scheduled',
@@ -175,6 +177,8 @@ function App() {
   const [isReceptionModalOpen, setIsReceptionModalOpen] = useState(false);
   const [isTourOpen, setIsTourOpen] = useState(false);
   const [seenRoles, setSeenRoles] = useState([]);
+  const [mode, setMode] = useState('presentation'); // 'presentation' or 'dashboard'
+  const [currentSlide, setCurrentSlide] = useState(0);
 
   // Initialize data
   useEffect(() => {
@@ -369,6 +373,22 @@ function App() {
   ];
 
   const currentRoleLabel = roles.find(r => r.id === currentRole)?.label;
+
+  if (mode === 'presentation') {
+    return (
+      <PresentationView
+        currentSlide={currentSlide}
+        setCurrentSlide={setCurrentSlide}
+        mode={mode}
+        onStartDemo={() => {
+          setMode('dashboard');
+          setCurrentRole('admin');
+          setSeenRoles(['admin']);
+          setIsTourOpen(true);
+        }}
+      />
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900 font-sans">
@@ -838,10 +858,26 @@ function App() {
               setSelectedStatus('all');
               setViewMode('list');
               setCurrentRole('coordinator');
+            } else if (currentRole === 'coordinator') {
+              setMode('presentation');
+              setCurrentSlide(8); // Index 8 is Slide 9
             }
           }
         }}
       />
+
+      {/* Botón flotante para regresar a la presentación */}
+      <button
+        onClick={() => {
+          setMode('presentation');
+          setCurrentSlide(7); // Volver al Slide 8 (la demo)
+        }}
+        className="fixed bottom-6 right-6 z-50 flex items-center gap-2 px-4 py-3 bg-slate-900/90 text-white rounded-xl shadow-2xl border border-slate-850 hover:bg-slate-800 active:scale-95 transition-all text-xs font-semibold select-none cursor-pointer"
+        title="Volver a la Presentación"
+      >
+        <Tv className="w-4 h-4 text-blue-400" />
+        <span>Volver a Presentación</span>
+      </button>
     </div>
   );
 }
