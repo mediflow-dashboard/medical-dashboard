@@ -33,6 +33,28 @@ export const generateMockData = () => {
     const appointments = [
         // Dr. Smith Schedule (08:00 - 10:00) - Room 101
         {
+            id: 200,
+            time: "08:00",
+            patientName: "Laura Gomez",
+            dni: "38.123.456",
+            birthDate: "12/08/1994",
+            doctorName: "Dr. Smith",
+            room: "101",
+            status: "waiting",
+            checkInTime: getRealisticCheckIn("08:00", -8), // Arrived 07:52
+            waitTime: 10,
+            medicalHistorySummary: "Paciente cursando embarazo de 12 semanas. Náuseas leves.",
+            age: 31,
+            gender: "Femenino",
+            bloodType: "A+",
+            lastVisit: "15 Ene 2026",
+            reasonForVisit: "Control obstétrico.",
+            chronicConditions: [],
+            medications: ["Ácido Fólico"],
+            riskFactors: [],
+            confirmed: true,
+        },
+        {
             id: 101,
             time: "08:30",
             patientName: "Lucia Diaz",

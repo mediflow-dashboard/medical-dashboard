@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Users,
   Clock,
@@ -42,12 +42,12 @@ const TOTAL_ROOMS = 6; // Fixed total for prototype
 const MAX_WAITING_CAPACITY = 15; // Max capacity for waiting room
 const MAX_WAIT_TIME_SLA = 20; // Max acceptable wait time in minutes
 
-const TOUR_STEPS = [
+const ADMIN_TOUR_STEPS = [
   {
     selector: '[data-tour="role-switcher"]',
-    title: 'Selector de Vista (Roles)',
-    content: 'Como recepcionista, trabajas desde la Vista Administrativa para ver la agenda global. Este selector te permite alternar de rol para colaborar con médicos o coordinadores.',
-    benefit: 'Acceso centralizado a las herramientas adecuadas para cada momento de tu jornada.',
+    title: 'Recepcionistas',
+    content: 'Esta es tu área de trabajo principal. Aquí dispones de información de utilidad rápida para el día a día en la clínica y el acceso directo al módulo de recepción.',
+    benefit: 'Facilita una gestión ágil del mostrador y una atención preferencial al paciente desde que ingresa.',
     placement: 'left'
   },
   {
@@ -73,9 +73,9 @@ const TOUR_STEPS = [
   },
   {
     selector: '[data-tour="patient-ia-summary"]',
-    title: 'Resúmenes Clínicos por IA',
-    content: 'Pasa el cursor sobre el nombre de cualquier paciente para desplegar su ficha y una síntesis clínica compacta redactada por Inteligencia Artificial.',
-    benefit: 'Te advierte al instante de riesgos críticos (alergias, movilidad reducida) o coberturas médicas impagas antes de admitirlo.',
+    title: 'Identificación Correcta (Itaes - Joint Commission)',
+    content: 'En la columna Paciente dispones de forma visible e inmediata de sus datos identificadores primarios (Nombre, DNI y Fecha de Nacimiento), requeridos para la correcta identificación del paciente según normativas internacionales.',
+    benefit: 'Garantiza una verificación inequívoca en la sala de espera y consultorio, mitigando errores de identificación cruzada bajo estándares de Itaes y Joint Commission.',
     placement: 'right'
   },
   {
@@ -87,10 +87,86 @@ const TOUR_STEPS = [
   }
 ];
 
+const MEDICAL_TOUR_STEPS = [
+  {
+    selector: '[data-tour="role-switcher"]',
+    title: 'Médicos',
+    content: 'Esta es la interfaz dedicada a los profesionales de la salud. Desde aquí visualizas tu agenda diaria y el estado en sala de espera de tus pacientes asignados.',
+    benefit: 'Simplifica el seguimiento del consultorio y permite registrar los estados de consulta en tiempo real.',
+    placement: 'left'
+  },
+  {
+    selector: '[data-tour="kpi-waiting"]',
+    title: 'Mis Pacientes en Espera',
+    content: 'Monitorea cuántos pacientes tuyos están en sala de espera listos para ingresar a consulta.',
+    benefit: 'Te ayuda a anticipar la demanda de consultas y gestionar el flujo del consultorio de manera más eficiente.',
+    placement: 'bottom'
+  },
+  {
+    selector: '[data-tour="kpi-delay"]',
+    title: 'Demora Promedio',
+    content: 'Mide la demora acumulada promedio en tus consultas del día en comparación con los objetivos de servicio.',
+    benefit: 'Te permite autoevaluar la puntualidad y prepararte ante eventuales desvíos en el cronograma.',
+    placement: 'bottom'
+  },
+  {
+    selector: '[data-tour="patient-ia-summary"]',
+    title: 'Ficha Clínica y Resumen IA',
+    content: 'Pasa el cursor sobre Laura Gomez para ver sus datos clínicos claves sintetizados por Inteligencia Artificial al instante.',
+    benefit: 'Agiliza la preparación de la consulta, detectando alertas críticas, alergias o antecedentes en un par de segundos.',
+    placement: 'right'
+  },
+  {
+    selector: '[data-tour="doctor-actions"]',
+    title: 'Acciones de Atención Médica',
+    content: 'Llama al paciente a consultorio ("Llamar"), inicia la atención ("Atender") o márcala como concluida ("Finalizar").',
+    benefit: 'Actualiza el estado clínico en toda la organización al instante para la correcta coordinación del mostrador.',
+    placement: 'left'
+  }
+];
+
+const COORDINATOR_TOUR_STEPS = [
+  {
+    selector: '[data-tour="role-switcher"]',
+    title: 'Coordinadores',
+    content: 'Este es tu centro de supervisión macro de la clínica. Ofrece una vista analítica e integral de la ocupación, ausentismo de pacientes y del semáforo inteligente de demoras.',
+    benefit: 'Otorga visibilidad completa para balancear la carga de trabajo y tomar decisiones estratégicas basadas en OKRs.',
+    placement: 'left'
+  },
+  {
+    selector: '[data-tour="kpis-container"]',
+    title: 'Métricas de Gestión y OKRs',
+    content: 'Monitorea globalmente la Ocupación, Ausentismo de pacientes y Tasa de Confirmación de turnos del día contra las metas de OKRs.',
+    benefit: 'Permite tomar decisiones estratégicas fundamentadas para equilibrar cargas de trabajo y optimizar recursos.',
+    placement: 'bottom'
+  },
+  {
+    selector: '[data-tour="agenda-filters"]',
+    title: 'Filtros Avanzados de Agenda',
+    content: 'Permite segmentar la lista general por profesional o por el estado actual de los turnos.',
+    benefit: 'Ideal para aislar incidentes o evaluar el comportamiento y carga de consultorios específicos.',
+    placement: 'bottom'
+  },
+  {
+    selector: '[data-tour="view-toggle"]',
+    title: 'Modos de Visualización',
+    content: 'Cambia libremente entre el listado clásico y la grilla espacial de Calendario por Consultorio.',
+    benefit: 'Te brinda una perspectiva física de uso de la infraestructura clínica en tiempo real.',
+    placement: 'bottom'
+  },
+  {
+    selector: '[data-tour="delay-kpi-cell"]',
+    title: 'Semáforo de Demoras',
+    content: 'Visualiza la escala de atraso médico (A tiempo, Leve, Media, Crítica) calculada a partir de los horarios reales de recepción y atención.',
+    benefit: 'Te advierte proactivamente sobre cuellos de botella para facilitar decisiones de reprogramación o asistencia.',
+    placement: 'left'
+  }
+];
+
 function App() {
   const [appointments, setAppointments] = useState([]);
   const [currentTime, setCurrentTime] = useState(new Date());
-  const [currentRole, setCurrentRole] = useState('medical'); // 'medical', 'admin', 'coordinator'
+  const [currentRole, setCurrentRole] = useState('admin'); // 'medical', 'admin', 'coordinator'
   const [isRoleMenuOpen, setIsRoleMenuOpen] = useState(false);
   const [selectedDoctor, setSelectedDoctor] = useState('all'); // For Admin filter
   const [selectedRoom, setSelectedRoom] = useState('all'); // For Admin filter
@@ -98,6 +174,7 @@ function App() {
   const [viewMode, setViewMode] = useState('calendar'); // 'calendar' or 'list'
   const [isReceptionModalOpen, setIsReceptionModalOpen] = useState(false);
   const [isTourOpen, setIsTourOpen] = useState(false);
+  const [seenRoles, setSeenRoles] = useState([]);
 
   // Initialize data
   useEffect(() => {
@@ -110,6 +187,24 @@ function App() {
     demoTime.setHours(10, 30, 0, 0);
     setCurrentTime(demoTime);
   }, []);
+
+  // Auto-open onboarding tour on first access to each role
+  useEffect(() => {
+    let timer;
+    setSeenRoles(prev => {
+      if (!prev.includes(currentRole)) {
+        timer = setTimeout(() => {
+          setIsTourOpen(true);
+        }, 500);
+        return [...prev, currentRole];
+      }
+      return prev;
+    });
+
+    return () => {
+      if (timer) clearTimeout(timer);
+    };
+  }, [currentRole]);
 
   // Calculate wait times
   const getWaitTime = (appointment) => {
@@ -296,16 +391,19 @@ function App() {
               <div className="text-xs text-gray-500">{currentTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
             </div>
 
-            {currentRole === 'admin' && (
-              <button
-                onClick={() => setIsTourOpen(true)}
-                className="flex items-center gap-1.5 px-3 py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 hover:text-blue-800 rounded-lg border border-blue-100 transition-colors text-xs font-semibold shadow-xs active:scale-95 transition-transform shrink-0"
-                title="Iniciar recorrido guiado explicativo"
-              >
-                <Sparkles className="w-3.5 h-3.5 text-blue-500" />
-                <span>¿Cómo funciona?</span>
-              </button>
-            )}
+            <button
+              onClick={() => {
+                if (currentRole === 'coordinator') {
+                  setViewMode('list');
+                }
+                setIsTourOpen(true);
+              }}
+              className="flex items-center gap-1.5 px-3 py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 hover:text-blue-800 rounded-lg border border-blue-100 transition-colors text-xs font-semibold shadow-xs active:scale-95 transition-transform shrink-0"
+              title="Iniciar recorrido guiado explicativo"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-blue-500" />
+              <span>¿Cómo funciona?</span>
+            </button>
 
             {/* Role Switcher */}
             <div className="relative">
@@ -356,7 +454,7 @@ function App() {
 
       <main className="max-w-7xl mx-auto px-6 py-8">
         {/* Metrics Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div data-tour="kpis-container" className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           {currentRole === 'coordinator' ? (
             <>
               <MetricCard
@@ -429,7 +527,7 @@ function App() {
 
               {/* Filters for Admin & Coordinator */}
               {(currentRole === 'admin' || currentRole === 'coordinator') && (
-                <div className="flex items-center gap-2 ml-4">
+                <div data-tour="agenda-filters" className="flex items-center gap-2 ml-4">
                   <SearchableSelect
                     items={doctorsList}
                     selectedItem={selectedDoctor}
@@ -460,7 +558,7 @@ function App() {
 
               {/* View Toggle for Coordinator */}
               {currentRole === 'coordinator' && (
-                <div className="flex bg-gray-100 p-1 rounded-lg ml-4">
+                <div data-tour="view-toggle" className="flex bg-gray-100 p-1 rounded-lg ml-4">
                   <button
                     onClick={() => setViewMode('list')}
                     className={cn(
@@ -638,7 +736,10 @@ function App() {
 
                           {/* Estado Demora (KPI Médico) - Hidden for Admin & Medical */}
                           {currentRole === 'coordinator' && (
-                            <td className="px-6 py-4">
+                            <td 
+                              className="px-6 py-4"
+                              data-tour={index === 0 ? "delay-kpi-cell" : undefined}
+                            >
                               {!isAvailable && (
                                 <div className={cn("inline-flex items-center gap-2 px-3 py-1 rounded-full border text-xs font-semibold", delayColor)}>
                                   <CalendarClock className="w-3 h-3" />
@@ -657,6 +758,7 @@ function App() {
                                   {/* Medical Role Actions */}
                                   {currentRole === 'medical' && app.status === 'waiting' && (
                                     <ActionButton
+                                      dataTour={index === 0 ? "doctor-actions" : undefined}
                                       onClick={() => handleStatusChange(app.id, 'called')}
                                       icon={<Users className="w-4 h-4" />}
                                       label="Llamar"
@@ -665,6 +767,7 @@ function App() {
                                   )}
                                   {currentRole === 'medical' && app.status === 'called' && (
                                     <ActionButton
+                                      dataTour={index === 0 ? "doctor-actions" : undefined}
                                       onClick={() => handleStatusChange(app.id, 'consulting')}
                                       icon={<Play className="w-4 h-4" />}
                                       label="Atender"
@@ -673,6 +776,7 @@ function App() {
                                   )}
                                   {currentRole === 'medical' && app.status === 'consulting' && (
                                     <ActionButton
+                                      dataTour={index === 0 ? "doctor-actions" : undefined}
                                       onClick={() => handleStatusChange(app.id, 'finished')}
                                       icon={<LogOut className="w-4 h-4" />}
                                       label="Finalizar"
@@ -713,9 +817,30 @@ function App() {
       />
 
       <OnboardingTour
+        key={`${currentRole}-${isTourOpen}`}
         isOpen={isTourOpen}
-        steps={TOUR_STEPS}
-        onClose={() => setIsTourOpen(false)}
+        steps={
+          currentRole === 'medical'
+            ? MEDICAL_TOUR_STEPS
+            : currentRole === 'coordinator'
+            ? COORDINATOR_TOUR_STEPS
+            : ADMIN_TOUR_STEPS
+        }
+        onClose={(completed) => {
+          setIsTourOpen(false);
+          if (completed) {
+            if (currentRole === 'admin') {
+              setSelectedDoctor('all');
+              setSelectedStatus('all');
+              setCurrentRole('medical');
+            } else if (currentRole === 'medical') {
+              setSelectedDoctor('all');
+              setSelectedStatus('all');
+              setViewMode('list');
+              setCurrentRole('coordinator');
+            }
+          }
+        }}
       />
     </div>
   );
@@ -736,7 +861,7 @@ function MetricCard({ icon, title, value, trend, trendColor, dataTour }) {
   );
 }
 
-function ActionButton({ onClick, icon, label, color, variant = 'solid', className }) {
+function ActionButton({ onClick, icon, label, color, variant = 'solid', className, dataTour }) {
   const colors = {
     blue: "bg-blue-50 text-blue-600 hover:bg-blue-100 border border-blue-100",
     green: "bg-green-50 text-green-600 hover:bg-green-100 border border-green-100",
@@ -752,7 +877,7 @@ function ActionButton({ onClick, icon, label, color, variant = 'solid', classNam
   const colorClass = variant === 'ghost' ? ghostColors[color] : colors[color];
 
   return (
-    <button onClick={onClick} className={cn(baseClass, colorClass, className)} title={label}>
+    <button data-tour={dataTour} onClick={onClick} className={cn(baseClass, colorClass, className)} title={label}>
       {icon}
       <span className="hidden lg:inline">{label}</span>
     </button>
